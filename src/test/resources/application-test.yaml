@@ -1,0 +1,11 @@
+spring:
+  kafka:
+    consumer:
+      group-id: task-registration-test-group
+
+tasks:
+  topic: task-registration-test
+  topic-partitions: 3
+
+worker:
+  progress-step: 100ms

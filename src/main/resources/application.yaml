@@ -1,0 +1,73 @@
+spring:
+  application:
+    name: async-task-service
+  threads:
+    virtual:
+      enabled: true
+  lifecycle:
+    timeout-per-shutdown-phase: "${SPRING_SHUTDOWN_TIMEOUT:PT45S}"
+  datasource:
+    url: "${DB_URL}"
+    username: "${DB_USER}"
+    password: "${DB_PASSWORD}"
+    hikari:
+      maximum-pool-size: "${DB_POOL_SIZE:20}"
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+  kafka:
+    bootstrap-servers: "${KAFKA_SERVERS}"
+    consumer:
+      group-id: "${TASKS_GROUP_ID}"
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+      key-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+      properties:
+        spring.deserializer.key.delegate.class: org.apache.kafka.common.serialization.UUIDDeserializer
+        spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JacksonJsonDeserializer
+        spring.json.value.default.type: com.example.task.dto.TaskRequestDto
+        spring.json.use.type.headers: false
+    listener:
+      ack-mode: record
+      concurrency: "${SPRING_KAFKA_LISTENER_CONCURRENCY:2}"
+
+tasks:
+  topic: "${TASKS_TOPIC}"
+  dead-letter-topic: "${tasks.topic}.DLT"
+  topic-partitions: "${TASKS_TOPIC_PARTITIONS}"
+
+worker:
+  max-concurrent: "${WORKER_MAX_CONCURRENT:10}"
+  max-attempts: "${WORKER_MAX_ATTEMPTS:3}"
+  poll-delay: "${WORKER_POLL_DELAY:PT1S}"
+  progress-step: "${WORKER_PROGRESS_STEP:PT1S}"
+  lease-duration: "${WORKER_LEASE_DURATION:PT30S}"
+  retry-delay: "${WORKER_RETRY_DELAY:PT30S}"
+  recovery-interval: "${WORKER_RECOVERY_INTERVAL:PT5S}"
+  recover-batch-size: "${WORKER_RECOVER_BATCH_SIZE:100}"
+  shutdown-wait: "${WORKER_SHUTDOWN_WAIT:PT20S}"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
